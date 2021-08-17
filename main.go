@@ -1,6 +1,6 @@
 package main
 
-import "grub-dbus/pkg/server"
+import "grub-encrypt-dbus/pkg/server"
 
 func main() {
 	srv := server.GetService()

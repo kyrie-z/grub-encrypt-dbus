@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"grub-dbus/pkg/utils"
+	"grub-encrypt-dbus/pkg/utils"
 
 	"pkg.deepin.io/lib/dbusutil"
 )
@@ -20,10 +20,13 @@ const (
 
 type GrubEncrypt struct {
 	methods *struct {
-		Setpassword   func() `in:"user,password" out:"user"`
-		Unsetpassword func() `in:"user" out:"user"`
+		AddAccount            func() `in:"user,password" out:"user"`
+		DeleteAccount         func() `in:"user"`
+		DisableAuthentication func() `in:"user"`
+		EnableAuthentication  func() `in:"user"`
 	}
 	Status string
+	User   []string
 }
 
 type Service struct {
