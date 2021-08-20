@@ -56,15 +56,25 @@ func GrubPBKDF2Crypto(usr, passwd string) (string, error) {
 
 }
 
-func ToString(v interface{}) string {
-	data, _ := json.Marshal(v)
-	return string(data)
-}
-
 //帐号校验
 func CheckUsername(username string) (b bool) {
 	if ok, _ := regexp.MatchString("^[a-zA-Z0-9]{3,}$", username); !ok {
 		return false
 	}
 	return true
+}
+
+func ToString(v interface{}) string {
+	data, _ := json.Marshal(v)
+	return string(data)
+}
+
+func IsInSlice(element string, elements []string) (isIn bool) {
+	for _, item := range elements {
+		if element == item {
+			isIn = true
+			return
+		}
+	}
+	return
 }

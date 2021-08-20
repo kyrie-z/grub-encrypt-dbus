@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -104,4 +105,47 @@ func readline(file string) ([]string, error) {
 		lines = append(lines, line)
 	}
 	return lines, nil
+}
+
+func DoDetect() ([]string, []string, error) {
+	var onlineUserList []string
+	var offlineUserList []string
+	lines, err := readline(MenuCryptoCfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, line := range lines {
+		if strings.HasPrefix(line, "set superusers=") {
+			re := regexp.MustCompile(`\"([^"]+)\"`) //匹配引号中字符
+			user := re.FindStringSubmatch(line)[1]
+			if findPrefix(lines, "password_pbkdf2 "+user) {
+				onlineUserList = append(onlineUserList, user)
+			}
+		} else if strings.Contains(line, "#set superusers=") {
+			re := regexp.MustCompile(`\"([^"]+)\"`)
+			user := re.FindStringSubmatch(line)[1]
+			if find(lines, "#password_pbkdf2 "+user+" grub.pbkdf2") {
+				offlineUserList = append(offlineUserList, user)
+			}
+		}
+	}
+	return onlineUserList, offlineUserList, nil
+}
+
+func find(content []string, goal string) bool {
+	for _, line := range content {
+		if strings.Contains(line, goal) {
+			return true
+		}
+	}
+	return false
+}
+
+func findPrefix(content []string, goal string) bool {
+	for _, line := range content {
+		if strings.HasPrefix(line, goal) {
+			return true
+		}
+	}
+	return false
 }

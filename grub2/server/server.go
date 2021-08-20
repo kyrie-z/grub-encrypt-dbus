@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"grub-encrypt-dbus/pkg/utils"
+	"grub-encrypt-dbus/grub2/utils"
 
 	"pkg.deepin.io/lib/dbusutil"
 )
@@ -11,13 +11,6 @@ import (
 	提供dbus服务信息的相关定义。
 */
 
-// dbus服务信息
-const (
-	dbusName = "com.deepin.daemon.GrubEncryption"  // @Name: 	名称
-	dbusPath = "/com/deepin/daemon/GrubEncryption" // @Path:	地址
-	dbusIFC  = "com.deepin.daemon.GrubEncryption"  // @IFC:	接口名
-)
-
 type GrubEncrypt struct {
 	methods *struct {
 		AddAccount            func() `in:"user,password" out:"user"`
@@ -25,8 +18,9 @@ type GrubEncrypt struct {
 		DisableAuthentication func() `in:"user"`
 		EnableAuthentication  func() `in:"user"`
 	}
-	Status string
-	User   []string
+	Status      string
+	OnlineUser  []string
+	OfflineUser []string
 }
 
 type Service struct {
@@ -59,12 +53,6 @@ func GetService() *Service {
 	return dbusSrv
 }
 
-// 获取 dbus对象 ifc名称
-func (g *GrubEncrypt) GetInterfaceName() string {
-	return dbusIFC
-}
-
-// 外部调用
 func (s *Service) Init() error {
 	err := s.conn.Export(dbusPath, s.GrubEncrypt)
 	if err != nil {
@@ -75,7 +63,7 @@ func (s *Service) Init() error {
 
 func (s *Service) Loop() {
 	//变量初始化操作
-	s.GrubEncrypt.detectStatus()
+	s.GrubEncrypt.DeatectAccount()
 	utils.InitGrubPBKDF2()
 
 	//wait
