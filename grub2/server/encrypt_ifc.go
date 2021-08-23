@@ -5,6 +5,7 @@ import (
 	"grub-encrypt-dbus/grub2/utils"
 
 	"github.com/godbus/dbus"
+	polkit "github.com/linuxdeepin/go-dbus-factory/org.freedesktop.policykit1"
 	"pkg.deepin.io/lib/dbusutil"
 	"pkg.deepin.io/lib/log"
 )
@@ -28,7 +29,7 @@ func (g *GrubEncrypt) GetInterfaceName() string {
 }
 
 //创建菜单加密账户，创建
-func (g *GrubEncrypt) AddAccount(usr, passwd string) *dbus.Error {
+func (g *GrubEncrypt) AddAccount(sender dbus.Sender, usr, passwd string) *dbus.Error {
 	if utils.IsInSlice(usr, g.OnlineUser) || utils.IsInSlice(usr, g.OfflineUser) {
 		logger.Warning("Existing user: " + usr)
 		return dbusutil.ToError(fmt.Errorf("Existing user: %s\n", usr))
@@ -76,7 +77,13 @@ func (g *GrubEncrypt) DisableAuthentication(usr string) *dbus.Error {
 }
 
 //使能所有用户
-func (g *GrubEncrypt) EnableAuthentication(usr string) *dbus.Error {
+func (g *GrubEncrypt) EnableAuthentication(sender dbus.Sender, usr string) *dbus.Error {
+	// fmt.Println(sender)
+	_, ok := g.checkAuth(sender, "com.deepin.daemon.GrubEncryption")
+	if ok != nil {
+		fmt.Println(ok.Error())
+	}
+
 	err := utils.Enable.WriteConfig(usr)
 	if err != nil {
 		fmt.Println(err)
@@ -101,4 +108,22 @@ func (g *GrubEncrypt) DeatectAccount() {
 	} else {
 		g.Status = "disable"
 	}
+}
+
+//鉴权
+func (g *GrubEncrypt) checkAuth(sender dbus.Sender, actionId string) (bool, error) {
+	systemBus, err := dbus.SystemBus()
+	if err != nil {
+		return false, err
+	}
+	authority := polkit.NewAuthority(systemBus)
+	subject := polkit.MakeSubject(polkit.SubjectKindSystemBusName)
+	subject.SetDetail("name", string(sender))
+	result, err := authority.CheckAuthorization(0, subject, actionId, nil,
+		polkit.CheckAuthorizationFlagsAllowUserInteraction, "")
+	if err != nil {
+		return false, err
+	}
+
+	return result.IsAuthorized, nil
 }
